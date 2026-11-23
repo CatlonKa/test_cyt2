@@ -15,8 +15,12 @@ TRAVEO™ T2G **CYT2BL3CAS**（Cortex®-M4，cat1a 单核）的 ModusToolbox 应
 
 ```
 test_cyt2/
-├── source/                     # 应用代码（新增 .c/.h 放这里）
-│   └── main.c                  # 入口：BSP 初始化 + 主循环
+├── User/                       # 应用代码（新增 .c/.h 放这里）
+│   ├── main.c                  # 入口：BSP 初始化 + 主循环
+│   ├── config.h                # 应用级配置
+│   ├── Applications/           # 应用层
+│   ├── BSP/                    # 板级适配
+│   └── Modules/                # 功能模块
 ├── bsps/TARGET_CYT2BL3/        # BSP（勿改）
 │   └── config/
 │       ├── design.modus        # 器件配置（用 Device Configurator 打开）
@@ -50,8 +54,8 @@ python .github/skills/mtb-tools/scripts/run_make.py --args program
 
 ## 开发约定
 
-- **新增源文件**：任意放 `source/` 下的子目录即可，构建系统会递归搜索 `*.c/*.h`，头文件所在目录自动加入 include 路径，**不需要改 `Makefile` 的 `SOURCES`/`INCLUDES`**。
-- **`main.c` 保持精简**（≤150 行）：只做初始化和主循环，功能按模块拆到 `source/<模块>.c/h`。
+- **新增源文件**：任意放 `User/` 下的子目录即可，构建系统会递归搜索 `*.c/*.h`，头文件所在目录自动加入 include 路径，**不需要改 `Makefile` 的 `SOURCES`/`INCLUDES`**。
+- **`main.c` 保持精简**（≤150 行）：只做初始化和主循环，功能按模块拆到 `User/<模块>.c/h`。
 - **外设配置只能在 Device Configurator 里改**（`design.modus`），不要手写 `cy_stc_*_config_t` 或直接调 `Cy_GPIO_SetHSIOM()`。
 - **`GeneratedSource/` 是生成产物**：不入库，克隆后需在 Device Configurator 里 Save & Generate。
 - **HAL 用 `mtb_hal_*`**，本工程不定义 `CY_USING_HAL`，不要用 `cyhal_*`。
