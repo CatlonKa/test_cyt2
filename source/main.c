@@ -1,11 +1,9 @@
 /*******************************************************************************
 * File Name:   main.c
 *
-* Description: This is the source code for the Empty Application Example
-*              for ModusToolbox.
+* Description: test_cyt2 应用入口：BSP 初始化 + 主循环。
 *
 * Related Document: See README.md
-*
 *
 *******************************************************************************
 * (c) 2021-2026, Infineon Technologies AG, or an affiliate of Infineon
@@ -68,9 +66,9 @@
 * Function Name: main
 *********************************************************************************
 * Summary:
-* This is the main function for CPU. It...
-*    1.
-*    2.
+* 应用入口。
+*    1. cybsp_init() 初始化器件与板级外设
+*    2. 使能全局中断，进入主循环
 *
 * Parameters:
 *  void
