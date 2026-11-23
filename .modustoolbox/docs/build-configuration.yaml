@@ -1,0 +1,110 @@
+# ModusToolbox Build Configuration Analysis for AI Agents
+# This document provides structured information about the build configuration of the ModusToolbox workspace.
+# It is intended for use by AI agents to better understand the project's build setup.
+# 
+# Additional Notes:
+#  - The common_libraries and common_includes relative paths are relative to the project root and not workspace root.
+
+path_interpretation_rules:
+  common_paths_relative_to: Project Directory
+  project_directories:
+    - test_cyt2
+  resolution_base: workspace_path + '/' + project_folder_name + '/' + relative_path
+  note: Use path normalization to collapse .. and . segments
+workspace_path: d:/Infineon/mtw/test_cyt2
+device_name: CYT2BL3CAS
+bsp_name: CYT2BL3
+board_name: TARGET_CYT2BL3
+bp_headers:
+  - d:/Infineon/mtw/test_cyt2/bsps/TARGET_CYT2BL3/cybsp.h
+middleware_summary:
+  total_available: 94
+  total_used: 9
+  available_by_category:
+    Bluetooth: 1
+    Core: 16
+    Graphics: 1
+    Middleware: 35
+    Peripheral: 37
+    Utilities: 4
+  used_by_category:
+    Core: 8
+    Middleware: 1
+  notes:
+    - Use the SKILL `mtb-tools`  to list available libraries and their summaries
+    - 'SUBSTITUTED BOARDS: board "TARGET_CYT2BL3" is not in the manifest (likely a custom BSP), and no manifest board carries its MCU CYT2BL3CAS, so this content comes from board(s) [KIT_T2G-B-E_2GO, KIT_T2G-B-E_LITE] in the same declared device family (t2g-b-e). The parts are close relatives, so most of this applies, but confirm part-specific limits (memory sizes, peripheral instance counts) and all board-level hardware against the actual design.'
+config_files:
+  - design.modus
+  - design.modus
+common_libraries:
+  - id: cat1cm0p
+    remote_uri: https://github.com/Infineon/cat1cm0p
+    version_tag: release-v1.11.0
+    local_path: ../mtb_shared/cat1cm0p/release-v1.11.0
+  - id: cmsis
+    remote_uri: https://github.com/Infineon/cmsis
+    version_tag: release-v6.1.1
+    local_path: ../mtb_shared/cmsis/release-v6.1.1
+  - id: core-lib
+    remote_uri: https://github.com/cypresssemiconductorco/core-lib
+    version_tag: release-v1.8.0
+    local_path: ../mtb_shared/core-lib/release-v1.8.0
+  - id: core-make
+    remote_uri: https://github.com/cypresssemiconductorco/core-make
+    version_tag: release-v3.10.0
+    local_path: ../mtb_shared/core-make/release-v3.10.0
+  - id: mtb-hal-t2gbe4m
+    remote_uri: https://github.com/Infineon/mtb-hal-t2gbe4m
+    version_tag: release-v1.0.0
+    local_path: ../mtb_shared/mtb-hal-t2gbe4m/release-v1.0.0
+  - id: mtb-pdl-cat1
+    remote_uri: https://github.com/cypresssemiconductorco/mtb-pdl-cat1
+    version_tag: release-v3.25.0
+    local_path: ../mtb_shared/mtb-pdl-cat1/release-v3.25.0
+  - id: recipe-make-cat1a
+    remote_uri: https://github.com/cypresssemiconductorco/recipe-make-cat1a
+    version_tag: release-v2.8.0
+    local_path: ../mtb_shared/recipe-make-cat1a/release-v2.8.0
+  - id: syspm-callbacks-t2gbe4m
+    remote_uri: https://github.com/Infineon/syspm-callbacks-t2gbe4m
+    version_tag: release-v1.0.0
+    local_path: ../mtb_shared/syspm-callbacks-t2gbe4m/release-v1.0.0
+  - id: device-db
+    remote_uri: https://github.com/Infineon/device-db
+    version_tag: release-v4.41.0
+    local_path: C:/Users/guqian/.modustoolbox/global/device-db/release-v4.41.0
+common_defines: []
+common_includes: []
+common_sources: []
+projects:
+  - project_name: test_cyt2
+    folder_name: d:/Infineon/mtw/test_cyt2
+    core_id: CM4_0
+    core_type: CM4
+    build_system: GNU Make
+    libraries: []
+    compiler_defines:
+      - '-DCOMPONENT_CAT1'
+      - '-DCOMPONENT_CAT1A'
+      - '-DCOMPONENT_CM0P_SLEEP'
+      - '-DCOMPONENT_CM4'
+      - '-DCOMPONENT_CM4_0'
+      - '-DCOMPONENT_CYT2BL3'
+      - '-DCOMPONENT_Debug'
+      - '-DCOMPONENT_GCC_ARM'
+      - '-DCOMPONENT_MTB_HAL'
+      - '-DCOMPONENT_MW_CAT1CM0P'
+      - '-DCOMPONENT_MW_CMSIS'
+      - '-DCOMPONENT_MW_CORE_LIB'
+      - '-DCOMPONENT_MW_CORE_MAKE'
+      - '-DCOMPONENT_MW_MTB_HAL_T2GBE4M'
+      - '-DCOMPONENT_MW_MTB_PDL_CAT1'
+      - '-DCOMPONENT_MW_RECIPE_MAKE_CAT1A'
+      - '-DCOMPONENT_MW_SYSPM_CALLBACKS_T2GBE4M'
+      - '-DCOMPONENT_SOFTFP'
+      - '-DCOMPONENT_TVIIBE4M'
+    sources: []
+    include_dirs: []
+    exclude_files: null
+summary: ''
+

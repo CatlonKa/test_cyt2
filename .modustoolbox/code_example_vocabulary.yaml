@@ -1,0 +1,104 @@
+# SUBSTITUTED BOARDS: board "TARGET_CYT2BL3" is not in the manifest (likely a custom BSP), and no manifest board carries its MCU CYT2BL3CAS, so this content comes from board(s) [KIT_T2G-B-E_2GO, KIT_T2G-B-E_LITE] in the same declared device family (t2g-b-e). The parts are close relatives, so most of this applies, but confirm part-specific limits (memory sizes, peripheral instance counts) and all board-level hardware against the actual design.
+#
+board_names:
+  - KIT_T2G-B-E_2GO
+  - KIT_T2G-B-E_LITE
+total_examples: 33
+categories:
+  - category: Getting Started
+    count: 3
+    tags: [dual cpu, hello world, blank, empty, template, led, starter]
+  - category: Peripherals
+    count: 30
+    tags: [adc, aes, blinking, blinky, can, canfd, counter, deepsleep, duty cycle, frequency, gpio, hash, hibernate, interrupt, lin, low power, mdma, message digest, pdma, psoc6, receive, sar, sha2, smart io, smartio, square wave, switch, systick, tcpwm, transmit, trng, uart, wdt, i2c, pwm, rtc, t2gbe, t2gbh, cryptography, led, master, t2gc2d, spi, slave]
+acronym_map:
+  afe:
+    - Audio Front-End
+    - Analog Front-End
+  asf:
+    - Alternative Serial Interface to securely load and execute target code directly over an alternate serial connection during device provisioning or early booting stages — NOT Atmel Software Framework
+  ccm:
+    - Cloud Connectivity Manager — NOT Counter with CBC-MAC
+  cts:
+    - Current Time Service — NOT Clear To Send
+  ess:
+    - Environmental Sensing Service — NOT Extended Service Set
+  hppass:
+    - High-Performance Programmable Analog Sub-System
+  lpa:
+    - Low Power Assistant
+  lppass:
+    - Low-Power Autonomous Analog Sub-System
+  mfs:
+    - Multi-Frequency Scan — CAPSENSE noise-rejection mode
+  mpc:
+    - Memory Protection Controller
+  msc:
+    - Multi Sense Converter (CAPSENSE parts)
+    - Mass Storage Class (USB parts)
+  mtbml:
+    - ModusToolbox Machine Learning
+  otp:
+    - One-Time Programmable memory — NOT One-Time Password
+  pdl:
+    - Peripheral Driver Library — the low-level ModusToolbox driver layer
+  rlad:
+    - Run-Length Adaptive Dithering — fixed-function decompression block in the GPU pipeline, not a software codec
+  scb:
+    - Serial Communication Block — configurable UART/SPI/I2C peripheral
+  smif:
+    - Serial Memory Interface — external flash/PSRAM controller
+  srf:
+    - Secure Request Framework
+  stl:
+    - Safety Test Library — NOT the C++ Standard Template Library
+  svc:
+    - Staged Voice Control middleware — NOT the Arm Cortex-M SVC (Supervisor Call) instruction
+  tcpwm:
+    - Peripheral Block configurable as a Timer, Counter, PWM
+  wcm:
+    - Wi-Fi Connection Manager
+synonym_map:
+  advertising:
+    - advertiser
+    - advertisement
+    - broadcast
+  ble:
+    - bluetooth low energy
+    - bluetooth le
+    - bt le
+  bluetooth:
+    - bt
+  capsense:
+    - capacitive sensing
+    - touch
+    - button
+    - slider
+  freertos:
+    - rtos
+    - real-time operating system
+  gfx:
+    - graphics
+    - display
+  ml:
+    - machine learning
+    - ai
+    - deepcraft
+  ota:
+    - over-the-air
+    - firmware update
+  pdm:
+    - microphone
+    - mic
+    - pdm-pcm
+  uart:
+    - serial
+    - console
+  wifi:
+    - wi-fi
+    - wireless lan
+    - wlan
+    - wireless
+notes:
+  - Expand the user's request into a small set of tags from this vocabulary, then call search. Tags are listed rarest (most discriminating) first, so prefer earlier ones; use acronym_map/synonym_map to bridge natural-language phrasing onto tags. An acronym listing more than one long form is ambiguous in this catalog — pick by context rather than assuming the first.
+  - 'SUBSTITUTED BOARDS: board "TARGET_CYT2BL3" is not in the manifest (likely a custom BSP), and no manifest board carries its MCU CYT2BL3CAS, so this content comes from board(s) [KIT_T2G-B-E_2GO, KIT_T2G-B-E_LITE] in the same declared device family (t2g-b-e). The parts are close relatives, so most of this applies, but confirm part-specific limits (memory sizes, peripheral instance counts) and all board-level hardware against the actual design.'
