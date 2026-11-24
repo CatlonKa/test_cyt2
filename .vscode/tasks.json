@@ -1,0 +1,209 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "--norc",
+                "-c",
+                "export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; make build TOOLCHAIN=GCC_ARM CONFIG=Debug "
+            ],
+            "windows": {
+                "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe",
+                "args": [
+                    "--norc",
+                    "-c",
+                    "export PATH=/bin:/usr/bin:$PATH ; export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe build TOOLCHAIN=GCC_ARM CONFIG=Debug"
+                ]
+            },
+            "problemMatcher": "$gcc",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Rebuild",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Clean",
+                "Build"
+            ],
+            "group": {
+                "kind": "build"
+            }
+        },
+        {
+            "label": "Clean",
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "--norc",
+                "-c",
+                "export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; make clean  "
+            ],
+            "windows": {
+                "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe",
+                "args": [
+                    "--norc",
+                    "-c",
+                    "export PATH=/bin:/usr/bin:$PATH ; export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe clean "
+                ]
+            }
+        },
+        {
+            "label": "Program",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/flash.ps1"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build"
+            }
+        },
+        {
+            // Skips probe auto-detection (~2 s faster). Use when the DAPLink
+            // is the probe you always plug in.
+            "label": "Program (DAPLink, fast)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/flash.ps1",
+                "-Probe",
+                "daplink"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Erase Device",
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "--norc",
+                "-c",
+                "export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; make erase  "
+            ],
+            "windows": {
+                "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe",
+                "args": [
+                    "--norc",
+                    "-c",
+                    "export PATH=/bin:/usr/bin:$PATH ; export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe erase "
+                ]
+            }
+        },
+        {
+            "hide": false,
+            "label": "Advanced Programming",
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "--norc",
+                "-c",
+                "make advanced_program"
+            ],
+            "windows": {
+                "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe",
+                "args": [
+                    "--norc",
+                    "-c",
+                    "export PATH=/bin:/usr/bin:$PATH ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe advanced_program"
+                ]
+            },
+            "group": {
+                "kind": "build"
+            }
+        },
+        {
+            "label": "Tool: Library Manager",
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "--norc",
+                "-c",
+                "make modlibs MTB__JOB_BACKGROUND="
+            ],
+            "windows": {
+                "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe",
+                "args": [
+                    "--norc",
+                    "-c",
+                    "export PATH=/bin:/usr/bin:$PATH ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe modlibs MTB__JOB_BACKGROUND="
+                ]
+            }
+        },
+        {
+            "label": "Erase All",
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "--norc",
+                "-c",
+                "export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; make erase MTB_ERASE_EXT_MEM=1 "
+            ],
+            "windows": {
+                "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe",
+                "args": [
+                    "--norc",
+                    "-c",
+                    "export PATH=/bin:/usr/bin:$PATH ; export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe erase MTB_ERASE_EXT_MEM=1"
+                ]
+            }
+        },
+        {
+            // NOTE: runs "Build" then "Program". Do NOT use 'make program' here:
+            // the MTB recipe hardcodes interface/kitprog3.cfg and only accepts
+            // KitProg3 / JLink, so it fails with a generic CMSIS-DAP.
+            "label": "Build & Program",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build",
+                "Program"
+            ],
+            "group": {
+                "kind": "build"
+            }
+        },
+        {
+            "label": "Build & Program (DAPLink, fast)",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build",
+                "Program (DAPLink, fast)"
+            ],
+            "group": {
+                "kind": "build"
+            }
+        },
+        {
+            "label": "Quick Program",
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "--norc",
+                "-c",
+                "export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; make qprogram  "
+            ],
+            "windows": {
+                "command": "${config:modustoolbox.toolsPath}/modus-shell/bin/bash.exe",
+                "args": [
+                    "--norc",
+                    "-c",
+                    "export PATH=/bin:/usr/bin:$PATH ; export CY_TOOLS_PATHS=${config:modustoolbox.toolsPath} ; ${config:modustoolbox.toolsPath}/modus-shell/bin/make.exe qprogram "
+                ]
+            }
+        }
+    ]
+}

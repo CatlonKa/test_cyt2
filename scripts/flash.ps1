@@ -1,18 +1,27 @@
-# Flash CYT2BL3: prefers SEGGER J-Link, falls back to CMSIS-DAP + OpenOCD.
+# Flash CYT2BL3: SEGGER J-Link or CMSIS-DAP/DAPLink via OpenOCD.
 #
-# Why not 'make program':
-#   The MTB recipe hardcodes interface/kitprog3.cfg and only supports
-#   KitProg3 / JLink. A generic CMSIS-DAP therefore never works through it.
+#   .\flash.ps1                    auto-detect probe
+#   .\flash.ps1 -Probe daplink     skip detection entirely (fastest)
+#   .\flash.ps1 -Probe jlink       force J-Link
+#   .\flash.ps1 -SkipVerify        don't read back the image
 #
-# Why the CMSIS-DAP path must reset first:
-#   A plain "halt + flash write_image erase" always fails on this device with
-#   "SROM API execution failed" (double fault inside the CM0+ flash stub).
-#   The reset below ('traveo2 reset_halt sysresetreq') drops the SWD DP --
-#   TRAVEO T2G powers down the debug domain on SYSRESETREQ -- but that is fine:
-#   the chip ends up in a state where the sector-erase algorithm works, and the
-#   next OpenOCD invocation reconnects. Verified 6/6 on 2026-11-23.
+# Why not 'make program': the MTB recipe hardcodes interface/kitprog3.cfg and
+# only accepts KitProg3 / JLink, so a generic CMSIS-DAP always fails there.
+#
+# Why the CMSIS-DAP path must reset first: a plain "halt + flash write_image
+# erase" always dies with "SROM API execution failed" (double fault inside the
+# CM0+ flash stub). 'traveo2 reset_halt sysresetreq' drops the SWD DP -- T2G
+# powers down the debug domain on SYSRESETREQ -- but leaves the chip in a state
+# where the erase algorithm works, and the next OpenOCD run reconnects.
+
+param(
+    [ValidateSet('auto', 'jlink', 'daplink')]
+    [string]$Probe = 'auto',
+    [switch]$SkipVerify
+)
 
 $ErrorActionPreference = 'Continue'
+$sw = [Diagnostics.Stopwatch]::StartNew()
 
 $projRoot = Split-Path -Parent $PSScriptRoot
 
@@ -23,29 +32,49 @@ $hexFile = Get-ChildItem $cfgDir -Filter '*.hex' -ErrorAction SilentlyContinue |
 if (-not $hexFile) { Write-Error "No hex in $cfgDir - build first"; exit 1 }
 $hex = $hexFile.FullName
 
-function Test-JLinkProbe {
-    $dev = Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue |
-           Where-Object { $_.InstanceId -match 'VID_1366' }
-    return [bool]$dev
-}
-
-function Find-JLinkExe {
-    $cands = @()
-    $cands += Get-ChildItem 'D:\stm32_tools\jlink', 'C:\Program Files\SEGGER', 'C:\Program Files (x86)\SEGGER' `
-        -Recurse -Depth 2 -Filter 'JLink.exe' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
-    return $cands | Select-Object -First 1
-}
-
-$jlink = Find-JLinkExe
-$useJLink = $jlink -and (Test-JLinkProbe)
-
 Write-Host "HEX : $hex"
+
+# Stale-hex guard: sources newer than the image means the flash will not match.
+$newerSrc = Get-ChildItem $projRoot -Recurse -Include '*.c', '*.h' -ErrorAction SilentlyContinue |
+            Where-Object { $_.LastWriteTime -gt $hexFile.LastWriteTime -and
+                           $_.FullName -notmatch '\\build\\' } |
+            Select-Object -First 3
+if ($newerSrc) {
+    Write-Host 'WARNING: sources changed after this hex was built:' -ForegroundColor Yellow
+    $newerSrc | ForEach-Object { Write-Host "  $($_.Name)" -ForegroundColor Yellow }
+    Write-Host '         run Build first, or use "Build & Program".' -ForegroundColor Yellow
+}
+
+# Test-Path on known locations is ~165x faster than a recursive Get-ChildItem
+# (2.15 s -> 0.013 s), which was the single biggest delay in this script.
+function Find-JLinkExe {
+    foreach ($p in @('D:\stm32_tools\jlink\JLink_V988\JLink.exe',
+                     'C:\Program Files\SEGGER\JLink\JLink.exe',
+                     'C:\Program Files (x86)\SEGGER\JLink\JLink.exe')) {
+        if (Test-Path $p) { return $p }
+    }
+    return $null
+}
+
+function Test-JLinkProbe {
+    $null -ne (Get-CimInstance Win32_PnPEntity -Filter "DeviceID LIKE 'USB\\VID_1366%'" `
+                    -ErrorAction SilentlyContinue)
+}
+
+$jlink = $null
+$useJLink = $false
+if ($Probe -eq 'jlink') {
+    $jlink = Find-JLinkExe
+    if (-not $jlink) { Write-Error 'JLink.exe not found'; exit 1 }
+    $useJLink = $true
+} elseif ($Probe -eq 'auto') {
+    $jlink = Find-JLinkExe
+    $useJLink = $jlink -and (Test-JLinkProbe)
+}
 
 if ($useJLink) {
     # ---------- J-Link ----------
-    Write-Host "Probe: J-Link ($jlink)"
-    Write-Host ''
-    Write-Host '--- J-Link program ---'
+    Write-Host "Probe: J-Link ($Probe mode)"
 
     $cmd = Join-Path ([System.IO.Path]::GetTempPath()) 'mtb_program.jlink'
     @(
@@ -63,26 +92,29 @@ if ($useJLink) {
 
     if ($LASTEXITCODE -ne 0) { Write-Error 'J-Link programming failed'; exit 1 }
     Write-Host ''
-    Write-Host 'FLASH OK (J-Link).' -ForegroundColor Green
+    Write-Host ('FLASH OK (J-Link) in {0:N1} s.' -f $sw.Elapsed.TotalSeconds) -ForegroundColor Green
     exit 0
 }
 
-# ---------- CMSIS-DAP fallback ----------
-Write-Host 'Probe: CMSIS-DAP (no J-Link detected)'
-if ($jlink) { Write-Host 'Note: JLink.exe found but no J-Link probe enumerated.' -ForegroundColor Yellow }
-Write-Host ''
+# ---------- CMSIS-DAP / DAPLink ----------
+Write-Host "Probe: CMSIS-DAP ($Probe mode)"
 
-$ocd = $null; $scripts = $null
-foreach ($r in @('D:\Infineon\Tools', 'C:\Infineon\Tools')) {
-    if (-not (Test-Path $r)) { continue }
-    $dir = Get-ChildItem $r -Directory -Filter 'ModusToolboxProgtools-*' -ErrorAction SilentlyContinue |
-           Sort-Object Name -Descending |
-           ForEach-Object { Join-Path $_.FullName 'openocd' } |
-           Where-Object { Test-Path (Join-Path $_ 'bin\openocd.exe') } |
-           Select-Object -First 1
-    if ($dir) { $ocd = Join-Path $dir 'bin\openocd.exe'; $scripts = Join-Path $dir 'scripts'; break }
+$ocdRoot = 'D:\Infineon\Tools\ModusToolboxProgtools-2.0\openocd'
+if (-not (Test-Path (Join-Path $ocdRoot 'bin\openocd.exe'))) {
+    $ocdRoot = $null
+    foreach ($r in @('D:\Infineon\Tools', 'C:\Infineon\Tools')) {
+        if (-not (Test-Path $r)) { continue }
+        $dir = Get-ChildItem $r -Directory -Filter 'ModusToolboxProgtools-*' -ErrorAction SilentlyContinue |
+               Sort-Object Name -Descending |
+               ForEach-Object { Join-Path $_.FullName 'openocd' } |
+               Where-Object { Test-Path (Join-Path $_ 'bin\openocd.exe') } |
+               Select-Object -First 1
+        if ($dir) { $ocdRoot = $dir; break }
+    }
 }
-if (-not $ocd) { Write-Error 'OpenOCD not found'; exit 1 }
+if (-not $ocdRoot) { Write-Error 'OpenOCD not found'; exit 1 }
+$ocd     = Join-Path $ocdRoot 'bin\openocd.exe'
+$scripts = Join-Path $ocdRoot 'scripts'
 
 $common = @(
     '-s', $scripts,
@@ -93,39 +125,39 @@ $common = @(
 )
 $hexFwd = $hex -replace '\\', '/'
 
-# Verified working recipe (6/6 passes on 2026-11-23):
-#   1) 'traveo2 reset_halt sysresetreq'  -- resets the chip so the CM0+ flash
-#      algorithm runs in a clean state. The SWD DP is dropped by this reset,
-#      which is expected; the following invocation reconnects.
-#   2) halt + 'flash write_image erase'  -- sector erase now succeeds.
-# Without step 1 the algorithm always dies with "SROM API execution failed"
-# (double fault inside the CM0+ flash stub), regardless of clock speed.
-Write-Host '--- reset target (SYSRESETREQ; the DP drop is expected) ---'
+# Step 1: reset so the CM0+ flash algorithm starts clean. The DP drop is
+# expected and is why this cannot share a session with the write below.
 & $ocd @common -c 'init' -c 'traveo2 reset_halt sysresetreq' -c 'shutdown' 2>&1 | Out-Null
-Start-Sleep -Seconds 2
+Start-Sleep -Milliseconds 800
 
-Write-Host '--- write flash ---'
-$text = (& $ocd @common -c 'init' -c 'targets traveo2_be_4m.cpu.cm0' -c 'halt' `
-         -c "flash write_image erase $hexFwd" -c 'shutdown' 2>&1 | Out-String)
+# Step 2: write, verify and start in ONE session (3 fewer OpenOCD starts).
+$cmds = @('init', 'targets traveo2_be_4m.cpu.cm0', 'halt', "flash write_image erase $hexFwd")
+if (-not $SkipVerify) { $cmds += "verify_image $hexFwd" }
+$cmds += @('reset run', 'shutdown')
+$ocdArgs = @()
+foreach ($c in $cmds) { $ocdArgs += '-c'; $ocdArgs += $c }
+
+$text = (& $ocd @common @ocdArgs 2>&1 | Out-String)
+
 if ($text -notmatch 'wrote \d+ bytes') {
     Write-Host $text
     if ($text -match 'SROM API execution failed|lockup|timed out while waiting') {
         Write-Host ''
-        Write-Host 'Retry once; if it keeps failing, connect J-Link.' -ForegroundColor Yellow
+        Write-Host 'Flash algorithm crashed. Power-cycle the board and retry.' -ForegroundColor Yellow
     }
     Write-Error 'flash write failed'
     exit 1
 }
-([regex]::Match($text, 'wrote \d+ bytes[^\r\n]*').Value)
+Write-Host '  ' ([regex]::Match($text, 'wrote \d+ bytes[^\r\n]*').Value).Trim()
 
-Write-Host '--- verify ---'
-$text = (& $ocd @common -c 'init' -c 'targets traveo2_be_4m.cpu.cm0' -c 'halt' `
-         -c "verify_image $hexFwd" -c 'shutdown' 2>&1 | Out-String)
-if ($text -notmatch 'verified \d+ bytes') { Write-Host $text; Write-Error 'verify failed'; exit 1 }
-([regex]::Match($text, 'verified \d+ bytes[^\r\n]*').Value)
-
-Write-Host '--- start firmware ---'
-& $ocd @common -c 'init' -c 'reset run' -c 'shutdown' 2>&1 | Out-Null
+if (-not $SkipVerify) {
+    if ($text -notmatch 'verified \d+ bytes') {
+        Write-Host $text
+        Write-Error 'verify failed'
+        exit 1
+    }
+    Write-Host '  ' ([regex]::Match($text, 'verified \d+ bytes[^\r\n]*').Value).Trim()
+}
 
 Write-Host ''
-Write-Host 'FLASH OK. Firmware restarted (power-cycle if it does not run).' -ForegroundColor Green
+Write-Host ('FLASH OK (CMSIS-DAP) in {0:N1} s.' -f $sw.Elapsed.TotalSeconds) -ForegroundColor Green

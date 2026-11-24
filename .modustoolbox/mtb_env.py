@@ -12,9 +12,9 @@ SESSION_INFO = _json.loads(r'''{
   "board_target": "TARGET_CYT2BL3",
   "cy_tools_path": "D:/Infineon/ModusToolbox/tools_3.9",
   "modus_shell_path": "D:/Infineon/ModusToolbox/tools_3.9/modus-shell",
-  "tcp_port": 55212,
-  "ext_port": 55211,
-  "pid": 33036,
+  "tcp_port": 56388,
+  "ext_port": 56387,
+  "pid": 12496,
   "log_level": "info",
   "log_file": "C:/Users/guqian/AppData/Local/Temp/mtbai-logs/mtbai.log"
 }''')

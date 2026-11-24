@@ -39,8 +39,8 @@ Release/
 makefile.init
 
 # Visual Studio Code
-openocd.tcl
-.vscode/
+# .vscode/ 入库：构建/烧录/调试配置都在这里，比赛现场要能直接复用
+# openocd.tcl 是 launch.json 的 configFiles 依赖，不入库会导致克隆后无法调试
 *.code-workspace
 
 # IAR Embedded Workbench files
