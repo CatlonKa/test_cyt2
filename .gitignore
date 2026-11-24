@@ -96,6 +96,10 @@ Backup*
 # Trash files
 *.bak
 
+# Python 缓存（工具脚本运行时生成）
+__pycache__/
+*.pyc
+
 
 # Keil uVision files
 
