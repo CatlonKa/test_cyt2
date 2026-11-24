@@ -108,10 +108,7 @@ int main(void)
 
     for (;;)
     {
-        Cy_GPIO_Write(ioss_0_port_23_pin_7_PORT, ioss_0_port_23_pin_7_PIN, 0u); /* 低 → 亮 */
-        Cy_SysLib_Delay(500u);
-        Cy_GPIO_Write(ioss_0_port_23_pin_7_PORT, ioss_0_port_23_pin_7_PIN, 1u); /* 高 → 灭 */
-        Cy_SysLib_Delay(500u);
+
     }
 }
 
