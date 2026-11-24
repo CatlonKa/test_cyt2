@@ -30,15 +30,32 @@ test_cyt2/
 
 ## 构建与烧录
 
+**全新克隆后必须先 `getlibs`**，否则 `build` 会报
+`Libraries: "bsp core-make recipe-make" not found`。
+
+`libs/` 与 `GeneratedSource/` 都被 git 忽略，但均可自动重建：
+`getlibs` 依据 `bsps/TARGET_CYT2BL3/deps/*.mtbx` + `deps/assetlocks.json` 重建 `libs/`，
+`build` 依据 `design.modus` 重新生成 `GeneratedSource/`。
+
 ```powershell
-# 首次/新增 .mtb 后先拉依赖
+# 1. 仅首次、或增删 .mtb 依赖后
 python .github/skills/mtb-tools/scripts/run_make.py --args getlibs
 
+# 2. 日常循环
 python .github/skills/mtb-tools/scripts/run_make.py --args build
 python .github/skills/mtb-tools/scripts/run_make.py --args program
 ```
 
 VS Code 任务：`Ctrl+Shift+B` 构建，`Program` 烧录。
+
+⚠️ 烧录读取 `build/last_config/*.hex`，克隆后先 build 一次再烧。
+
+## 版本控制
+
+入库：`User/`、`bsps/`、`deps/`、`.vscode/`、`openocd.tcl`、`scripts/`、`design.modus`。
+
+忽略：`libs/`、`build/`、`GeneratedSource/`、`.cache/`、`.modustoolbox/mtb_env.*`、`*.code-workspace`
+—— 全部可由 `getlibs` 或工具自动重建。
 
 ## 工程约定
 

@@ -18,6 +18,13 @@ GeneratedSource/
 *.lock
 .mtbqueryapi
 
+# ModusToolbox AI 扩展的会话状态（每次启动都变：pid/端口/绝对路径）
+.modustoolbox/mtb_env.json
+.modustoolbox/mtb_env.py
+
+# clangd 索引缓存
+.cache/
+
 # ModusToolbox BSP files. Any custom BSP file for code examples is shipped within the 'templates' folder
 # bsps/
 
