@@ -20,8 +20,7 @@
             },
             "problemMatcher": "$gcc",
             "group": {
-                "kind": "build",
-                "isDefault": true
+                "kind": "build"
             }
         },
         {
@@ -54,6 +53,11 @@
             }
         },
         {
+            // Flash only -- no compile. This is the default build task, so the
+            // toolbar / Ctrl+Shift+B button flashes the existing hex directly.
+            // flash.ps1 warns if any source file is newer than the hex.
+            // To make Ctrl+Shift+B compile instead, move "isDefault": true to
+            // the "Build" task above.
             "label": "Program",
             "type": "shell",
             "command": "powershell",
@@ -66,11 +70,12 @@
             ],
             "problemMatcher": [],
             "group": {
-                "kind": "build"
+                "kind": "build",
+                "isDefault": true
             }
         },
         {
-            // Skips probe auto-detection (~2 s faster). Use when the DAPLink
+            // Skips probe auto-detection (~1 s faster). Use when the DAPLink
             // is the probe you always plug in.
             "label": "Program (DAPLink, fast)",
             "type": "shell",
@@ -166,6 +171,8 @@
             // NOTE: runs "Build" then "Program". Do NOT use 'make program' here:
             // the MTB recipe hardcodes interface/kitprog3.cfg and only accepts
             // KitProg3 / JLink, so it fails with a generic CMSIS-DAP.
+            // The Infineon "fix task" command reverts this to 'make program';
+            // re-run that fix only if you switch to a KitProg3 probe.
             "label": "Build & Program",
             "dependsOrder": "sequence",
             "dependsOn": [

@@ -125,15 +125,49 @@ $common = @(
 )
 $hexFwd = $hex -replace '\\', '/'
 
-# Step 1: reset so the CM0+ flash algorithm starts clean. The DP drop is
-# expected and is why this cannot share a session with the write below.
-& $ocd @common -c 'init' -c 'traveo2 reset_halt sysresetreq' -c 'shutdown' 2>&1 | Out-Null
-Start-Sleep -Milliseconds 800
+# Step 1: reset so the CM0+ flash algorithm starts clean. OpenOCD spends ~23 s
+# here retrying "cannot read IDR" (44 attempts) after the SYSRESETREQ has
+# already closed the debug domain. The reset itself is instantaneous, so watch
+# the output for that first "cannot read IDR" and kill the process. Measured
+# 23.8 s -> 2.4 s.
+#
+# Start-Process joins -ArgumentList with spaces without quoting, so every
+# argument containing a space must be quoted by hand (otherwise 'source [find
+# interface/cmsis-dap.cfg]' is split and OpenOCD aborts with "Unexpected
+# command line argument: [find").
+function Quote-Args([string[]]$a) {
+    return ($a | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } })
+}
 
-# Step 2: write, verify and start in ONE session (3 fewer OpenOCD starts).
+function Invoke-ResetAndAbort {
+    $out = Join-Path ([System.IO.Path]::GetTempPath()) 'mtb_reset.out'
+    $err = Join-Path ([System.IO.Path]::GetTempPath()) 'mtb_reset.err'
+    Remove-Item $out, $err -Force -ErrorAction SilentlyContinue
+
+    $swReset = [Diagnostics.Stopwatch]::StartNew()
+    $p = Start-Process -FilePath $ocd -NoNewWindow -PassThru `
+         -ArgumentList (Quote-Args (@($common) + @('-c', 'init', '-c', 'traveo2 reset_halt sysresetreq', '-c', 'shutdown'))) `
+         -RedirectStandardOutput $out -RedirectStandardError $err
+
+    while ($swReset.Elapsed.TotalSeconds -lt 15) {
+        Start-Sleep -Milliseconds 60
+        if ($p.HasExited) { break }
+        $e = if (Test-Path $err) { Get-Content $err -Raw -ErrorAction SilentlyContinue } else { '' }
+        $o = if (Test-Path $out) { Get-Content $out -Raw -ErrorAction SilentlyContinue } else { '' }
+        if ($e -match 'cannot read IDR' -or $o -match 'cannot read IDR') { break }
+    }
+    if (-not $p.HasExited) { try { $p.Kill() } catch { }; try { $p.WaitForExit() } catch { } }
+    Remove-Item $out, $err -Force -ErrorAction SilentlyContinue
+}
+
+Invoke-ResetAndAbort
+Start-Sleep -Milliseconds 500
+
+# Step 2: write + verify. This session must run to completion -- killing it
+# before "verified" would leave the image half programmed.
 $cmds = @('init', 'targets traveo2_be_4m.cpu.cm0', 'halt', "flash write_image erase $hexFwd")
 if (-not $SkipVerify) { $cmds += "verify_image $hexFwd" }
-$cmds += @('reset run', 'shutdown')
+$cmds += @('shutdown')
 $ocdArgs = @()
 foreach ($c in $cmds) { $ocdArgs += '-c'; $ocdArgs += $c }
 
@@ -158,6 +192,10 @@ if (-not $SkipVerify) {
     }
     Write-Host '  ' ([regex]::Match($text, 'verified \d+ bytes[^\r\n]*').Value).Trim()
 }
+
+# Step 3: start the firmware. Must run to completion -- aborting this one too
+# early leaves CM0+ stuck in the flash stub (observed PC in SRAM at 0x0800_xxxx).
+& $ocd @common -c 'init' -c 'reset run' -c 'shutdown' 2>&1 | Out-Null
 
 Write-Host ''
 Write-Host ('FLASH OK (CMSIS-DAP) in {0:N1} s.' -f $sw.Elapsed.TotalSeconds) -ForegroundColor Green
