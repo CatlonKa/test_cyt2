@@ -42,6 +42,7 @@
 #include "cyhal.h"
 #endif
 #include "cybsp.h"
+#include "config.h"
 
 /******************************************************************************
 * Macros
@@ -81,15 +82,6 @@ int main(void)
 {
     cy_rslt_t result;
 
-#if defined (CY_DEVICE_SECURE) && defined (CY_USING_HAL)
-    cyhal_wdt_t wdt_obj;
-
-    /* Clear watchdog timer so that it doesn't trigger a reset */
-    result = cyhal_wdt_init(&wdt_obj, cyhal_wdt_get_max_timeout_ms());
-    CY_ASSERT(CY_RSLT_SUCCESS == result);
-    cyhal_wdt_free(&wdt_obj);
-#endif
-
     /* Initialize the device and board peripherals */
     result = cybsp_init();
 
@@ -104,11 +96,13 @@ int main(void)
 
 
 
-    Cy_GPIO_Write(ioss_0_port_23_pin_7_PORT, ioss_0_port_23_pin_7_PIN, 0);
+
+
 
     for (;;)
     {
-
+        Cy_SysLib_Delay(500);
+        LED_TOGGLE();
     }
 }
 
